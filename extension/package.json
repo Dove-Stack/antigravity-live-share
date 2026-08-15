@@ -1,0 +1,40 @@
+{
+  "name": "antigravity-live-share",
+  "displayName": "Antigravity Live Share",
+  "description": "Real-time collaborative development for Antigravity IDE.",
+  "version": "0.1.0",
+  "publisher": "dove-stack",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:liveShare.startSession"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "liveShare.startSession",
+        "title": "Live Share: Start Session"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dove-Stack/antigravity-live-share.git"
+  },
+  "homepage": "https://github.com/Dove-Stack/antigravity-live-share"
+}
