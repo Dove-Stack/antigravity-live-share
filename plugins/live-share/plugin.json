@@ -1,5 +1,5 @@
 {
-  "$schema": "https://antigravity.google/shemas/v1/plugin.json",
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "live-share",
-  "description": "Real-time collaborative development for Antigravity IDE"
+  "description": "Real-time collaborative development for Antigravity IDE."
 }
