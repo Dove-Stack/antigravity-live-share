@@ -13,6 +13,26 @@ The goal is to make collaborative coding as simple as:
 3. Your teammate joins.
 4. Start coding together.
 
+                 Antigravity IDE
+                       │
+                       ▼
+              ┌─────────────────┐
+              │  Live Share     │
+              │     Plugin      │
+              └────────┬────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │ Live Share      │
+              │ Sidecar         │
+              │                 │
+              │ WebSocket/CRDT  │
+              └────────┬────────┘
+                       │
+                       ▼
+                Collaboration
+                   Server
+
 ```mermaid
 flowchart LR
     subgraph IDE["🖥️ Antigravity IDE"]
