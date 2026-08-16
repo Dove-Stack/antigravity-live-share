@@ -12,7 +12,10 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:liveShare.startSession"
+    "onCommand:liveShare.startSession",
+    "onCommand:liveShare.stopSession",
+    "onCommand:liveShare.showSession",
+    "onCommand:liveShare.joinSession"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -20,6 +23,18 @@
       {
         "command": "liveShare.startSession",
         "title": "Live Share: Start Session"
+      },
+      {
+        "command": "liveShare.stopSession",
+        "title": "Live Share: Stop Session"
+      },
+      {
+        "command": "liveShare.showSession",
+        "title": "Live Share: Copy Session ID"
+      },
+      {
+        "command": "liveShare.joinSession",
+        "title": "Live Share: Join Session"
       }
     ]
   },
@@ -28,7 +43,7 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.1",
     "@types/vscode": "^1.90.0",
     "typescript": "^5.0.0"
   },
