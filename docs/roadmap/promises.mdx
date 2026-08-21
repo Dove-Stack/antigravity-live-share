@@ -41,8 +41,36 @@ real collaboration suite.
 </Steps>
 
 :::warning
-Voice and video are **design-stage promises** — nothing in the repo yet. The
-signaling schema below is the plan, not shipped code.
+**Voice chat is shipped** (v0.2 of the roadmap): WebRTC data-channel audio
+with opus codec, microphone capture via `ffmpeg`, playback via `ffplay` — both
+capability-detected at runtime. **Live video remains a design-stage promise.**
+:::
+
+## Voice chat, as built
+
+<Steps>
+  1. **Signal over what exists**
+
+      SDP offers, answers, and ICE candidates ride the existing WebSocket relay
+      as `voice.offer` / `voice.answer` / `voice.ice` frames addressed with a
+      `to` field.
+
+  2. **Connect peer-to-peer**
+
+      A full mesh of WebRTC connections forms per session; the lexicographically
+      smaller client ID initiates, so offer glare is impossible by construction.
+
+  3. **Stream audio over data channels**
+
+      ffmpeg pipes raw PCM from the mic; it's framed at 20ms, opus-encoded,
+      sent base64 over the open data channel, decoded, and played through
+      ffplay on the far side.
+</Steps>
+
+:::note
+No camera? No mic? No FFmpeg? Signaling still works and text/presence/sync are
+unaffected — voice degrades to a clear "audio unavailable" message instead of
+breaking anything.
 :::
 
 ## Access control, in three rules
