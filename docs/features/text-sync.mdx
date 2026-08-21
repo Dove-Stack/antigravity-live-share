@@ -1,0 +1,62 @@
+---
+title: Text Sync
+description: Conflict-free real-time document editing powered by Yjs CRDTs over the existing relay.
+sidebar:
+  label: Text Sync
+  order: 3
+---
+
+<Badge variant="warning">Beta</Badge>
+
+The sync layer gives every peer a converging mirror of the host's open files.
+Two people can type in the same function at the same time — both keystrokes
+survive.
+
+## The model
+
+- One **Yjs `Y.Doc`** per file, keyed by workspace-relative path
+- The **host broadcasts initial state** (`doc.state`, base64-encoded binary)
+  for every open file document at session start
+- Local edits are diffed (common prefix/suffix) into the Y text and shipped as
+  **binary deltas** (`doc.update`) — only what peers haven't seen, tracked via
+  state vectors
+- Remote updates are applied to the Y.Doc, then reconciled into the editor via
+  a minimal splice so your cursor stays put
+
+<Diff
+  lang="ts"
+  old={`export function greet(name) {
+  return "Hi, " + name;
+}`}
+  new={`export function greet(name: string): string {
+  return \`Hi, \${name}!\`;
+}`}
+/>
+
+Host and guest make these two edits *concurrently* — after exchange, both
+clients hold exactly this merged result. No lock, no last-write-wins.
+
+## FAQ
+
+<Accordion>
+  <AccordionItem title="What happens if two guests edit offline?">
+    Deltas queue locally and merge deterministically on reconnect — that is the
+    entire point of using a CRDT rather than operational transform.
+  </AccordionItem>
+  <AccordionItem title="Does the server store documents?">
+    Never. Frames are relayed verbatim; rooms vanish when empty.
+  </AccordionItem>
+  <AccordionItem title="Why is this beta?">
+    Guests currently sync files the host had open at session start; late-added
+    files and file *creation* on the guest side are next. Large-binary and
+    notebook documents are also out of scope for v0.1.
+  </AccordionItem>
+</Accordion>
+
+<Panel title="Echo suppression">
+
+Remote updates are written through `WorkspaceEdit` with an echo guard, so the
+local change listener ignores the very change we just applied — no feedback
+loops between editor and CRDT.
+
+</Panel>
