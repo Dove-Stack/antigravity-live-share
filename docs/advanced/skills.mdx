@@ -1,0 +1,68 @@
+---
+title: Skills
+description: Agent playbooks — how coding agents build and maintain this project and its Blume docs site without being re-explained anything.
+sidebar:
+  label: Skills
+  order: 1
+---
+
+<Badge variant="accent">Advanced</Badge>
+
+## What agent skills are
+
+Blume ships **agent skills** — playbooks that teach a coding agent like Claude
+Code, Codex, or Cursor to do a Blume-shaped job without you explaining it.
+They live in the repo's `skills/` folder and are bundled in the installed
+package under `skills/`, so any agent can be pointed at a `SKILL.md` directly.
+
+<Expandable title="Pointing an agent at a skill">
+
+Give your agent the path, that's it:
+
+```bash
+# example — ask your agent to read the skill before acting
+"Read node_modules/blume/skills/docs-site/SKILL.md,
+ then migrate our docs to the latest Blume."
+```
+
+Skills are plain Markdown: readable by humans, executable by agents.
+
+</Expandable>
+
+## This repo's own rituals
+
+Beyond Blume's skills, this project trains its agents with house rules — the
+workflow every branch follows:
+
+<Steps>
+  1. **One feature per branch**
+
+      Branch from the current state, name it
+      `feature/<name>` (or `docs/<name>`).
+
+  2. **First-commit marker**
+
+      The first commit on any new branch is exactly
+      *"first commit in this branch"*.
+
+  3. **The file ritual**
+
+      On completion: pick one file → stage it → conventional commit message →
+      push. Repeat until `git status` is clean. No batch commits.
+
+  4. **Verify before committing**
+
+      Compile, run smoke tests against the live server, then commit.
+</Steps>
+
+<Panel title="Why so granular?">
+
+Per-file commits make review, revert, and blame trivially precise — and they
+double as a changelog that an agent can parse to understand project history.
+
+</Panel>
+
+:::tip
+Ask your agent to check `git log --oneline` before planning work — the
+conventional-commit history *is* the project's brain.
+:::
