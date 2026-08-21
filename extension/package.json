@@ -69,6 +69,7 @@
   },
   "homepage": "https://github.com/Dove-Stack/antigravity-live-share",
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "yjs": "^13.6.20"
   }
 }
