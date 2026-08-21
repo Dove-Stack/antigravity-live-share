@@ -16,7 +16,8 @@
     "onCommand:liveShare.stopSession",
     "onCommand:liveShare.showSession",
     "onCommand:liveShare.joinSession",
-    "onCommand:liveShare.showPanel"
+    "onCommand:liveShare.showPanel",
+    "onCommand:liveShare.toggleVoice"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -40,6 +41,10 @@
       {
         "command": "liveShare.showPanel",
         "title": "Live Share: Open Session Panel"
+      },
+      {
+        "command": "liveShare.toggleVoice",
+        "title": "Live Share: Toggle Voice Chat"
       }
     ],
     "configuration": {
@@ -69,6 +74,8 @@
   },
   "homepage": "https://github.com/Dove-Stack/antigravity-live-share",
   "dependencies": {
+    "node-datachannel": "^0.33.1",
+    "opusscript": "^0.1.1",
     "ws": "^8.18.0",
     "yjs": "^13.6.20"
   }
