@@ -1,0 +1,39 @@
+---
+title: Status
+description: Where the project stands — shipped features, work in progress, and what's next.
+sidebar:
+  label: Status
+  order: 1
+---
+
+Development runs **one feature per branch**, each ending with per-file,
+conventional commits pushed to origin. The live tree below tracks the same
+board the maintainers use.
+
+<RoadmapChecklist />
+
+## The board
+
+| Feature | Branch | Status |
+| --- | --- | --- |
+| Client–server connection | `feature/client-server-connection` | <Badge variant="success">Shipped</Badge> |
+| Status bar + presence | `feature/status-bar-presence` | <Badge variant="success">Shipped</Badge> |
+| Glass UI panel | `feature/glass-ui-panel` | <Badge variant="success">Shipped</Badge> |
+| CRDT text sync | `feature/text-sync-crdt` | <Badge variant="success">Shipped</Badge> |
+| Voice chat | — | <Badge variant="accent">Next up</Badge> |
+| Live video | — | Planned |
+| Join approval / read-only | — | Planned |
+
+<Expandable title="Why one branch per feature?">
+
+Each branch starts with a bare *first commit in this branch* marker, ships
+exactly one feature, and is committed file-by-file so review history reads
+like a changelog. Docs branches follow the same ritual under `docs/`.
+
+</Expandable>
+
+:::note
+This site is versioned. When v0.2 ships, the v0.1 docs freeze into a snapshot
+with a version switcher in the header — old links keep working, canonicals
+point at the latest equivalent.
+:::
