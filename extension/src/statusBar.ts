@@ -10,6 +10,7 @@ export class SessionStatusBar {
   private sessionId = "";
   private role = "";
   private peers: PeerInfo[] = [];
+  private voice = false;
 
   activate(sessionId: string, role: string): void {
     this.sessionId = sessionId;
@@ -45,18 +46,26 @@ export class SessionStatusBar {
     );
   }
 
+  setVoice(enabled: boolean): void {
+    this.voice = enabled;
+    this.render();
+  }
+
   deactivate(): void {
     this.item.hide();
     this.sessionId = "";
     this.role = "";
     this.peers = [];
+    this.voice = false;
   }
 
   private render(): void {
     const label =
       this.peers.length === 1 ? "1 peer" : `${this.peers.length} peers`;
 
-    this.item.text = `$(broadcast) Live Share · $(person) ${label}`;
+    const voiceLabel = this.voice ? " $(mic)" : "";
+
+    this.item.text = `$(broadcast) Live Share · $(person) ${label}${voiceLabel}`;
     this.item.backgroundColor =
       this.peers.length > 0
         ? new vscode.ThemeColor("statusBarItem.warningBackground")
