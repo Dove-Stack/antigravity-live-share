@@ -88,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
         placeHolder: "Example: 6AD7D62F3EE7",
         ignoreFocusOut: true,
         validateInput: (value) => {
-          if (!value.trim) {
+          if (!value.trim()) {
             return "Session ID is required";
           }
           return undefined;
