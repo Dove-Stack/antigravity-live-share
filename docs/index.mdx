@@ -1,0 +1,86 @@
+---
+title: Antigravity Live Share
+description: Real-time collaborative development for the Antigravity IDE — sessions, presence, CRDT text sync, and a glassmorphism UI.
+sidebar:
+  label: Overview
+  order: 0
+---
+
+**Antigravity Live Share** brings a Live Share-style experience to the
+<Tooltip tip="The AI-first IDE from Google, based on VS Code." headline="Antigravity IDE">Antigravity IDE</Tooltip>
+— start a session, share an ID, and code together in real time with shared
+cursors and conflict-free document sync.
+
+<Badge variant="accent">v0.1.0</Badge> <Badge variant="success">Sessions</Badge>{" "}
+<Badge variant="success">Presence</Badge> <Badge variant="warning">Text Sync — beta</Badge>
+
+<GithubInfo owner="Dove-Stack" repo="antigravity-live-share" />
+
+## Why it stands out
+
+<CardGroup cols={2}>
+  <Card title="Zero-config sessions" href="/getting-started/quickstart" icon="rocket">
+    One command starts the server; one command shares your workspace.
+  </Card>
+  <Card title="Live presence" href="/features/presence" icon="users">
+    Peer cursors and selections rendered as colored decorations.
+  </Card>
+  <Card title="Conflict-free editing" href="/features/text-sync" icon="git-merge">
+    Yjs CRDTs merge concurrent edits without a merge dialog in sight.
+  </Card>
+  <Card title="Glass UI" href="/features/glass-ui" icon="sparkles">
+    A glassmorphism session panel in purple and light grey.
+  </Card>
+</CardGroup>
+
+<div className="glass-surface">
+
+**Design language.** The whole project — docs included — uses a **purple +
+light grey** palette with glassmorphism surfaces: translucent panels,
+backdrop blur, and soft inner glows.
+
+</div>
+
+## The pitch, in one prompt
+
+Hand this to any AI coding agent to get oriented instantly:
+
+<Prompt
+  description="Ask an agent to **onboard** itself to this repository."
+  actions={["copy"]}
+>
+  Explore the antigravity-live-share repo. It has three parts: server/ (Node.js
+  WebSocket signaling relay), extension/ (VS Code/Antigravity extension with
+  sessions, presence, Yjs text sync), and plugins/ (Antigravity manifest).
+  Read README.md first, then summarize the event protocol used between
+  client and server.
+</Prompt>
+
+## Architecture at a glance
+
+<Steps>
+  1. **Start Live Share**
+
+      The host opens Antigravity and runs *Live Share: Start Session*.
+
+  2. **Create Session**
+
+      The extension creates a room on the collaboration server via `POST /rooms`.
+
+  3. **Connect Participants**
+
+      Host and guests connect over WebSocket with `?room=<id>`.
+
+  4. **Real-Time Synchronization**
+
+      Cursors, selections, and CRDT document updates relay between peers.
+</Steps>
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/getting-started/quickstart" icon="terminal">
+    Get a session running in under two minutes.
+  </Card>
+  <Card title="System architecture" href="/getting-started/architecture" icon="network">
+    How the plugin, sidecar-style connection, and server fit together.
+  </Card>
+</CardGroup>
