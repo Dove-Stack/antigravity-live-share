@@ -1,7 +1,59 @@
 import * as vscode from "vscode";
+import {
+  ConnectionOptions,
+  LiveShareConnection,
+  ServerEvent,
+  createRoom,
+} from "./connection";
 import { SessionManager } from "./session";
 
 const sessionManager = new SessionManager();
+
+let connection: LiveShareConnection | undefined;
+
+function getServerUrl(): string {
+  return vscode.workspace
+    .getConfiguration("liveShare")
+    .get<string>("serverUrl", "http://localhost:3000");
+}
+
+function handleServerEvent(event: ServerEvent): void {
+  switch (event.type) {
+    case "peer.joined":
+      vscode.window.showInformationMessage("Live Share: a peer joined the session.");
+      break;
+    case "peer.left":
+      vscode.window.showInformationMessage("Live Share: a peer left the session.");
+      break;
+  }
+}
+
+function handleConnectionClosed(code: number, reason: string): void {
+  connection = undefined;
+
+  const detail = reason || `close code ${code}`;
+
+  vscode.window.showWarningMessage(`Live Share session disconnected (${detail}).`);
+}
+
+async function openConnection(sessionId: string): Promise<void> {
+  const options: ConnectionOptions = {
+    serverUrl: getServerUrl(),
+    sessionId,
+    onEvent: handleServerEvent,
+    onClosed: handleConnectionClosed,
+  };
+
+  connection = new LiveShareConnection(options);
+
+  await connection.open();
+}
+
+function teardown(): void {
+  connection?.close();
+  connection = undefined;
+  sessionManager.stopSession();
+}
 
 export function activate(context: vscode.ExtensionContext) {
   const startSession = vscode.commands.registerCommand(
@@ -16,15 +68,36 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const session = sessionManager.startSession();
+      let roomId: string;
 
-      vscode.window.showInformationMessage(`
-        Live Share Session Started. 
-        
-        ID: ${session.id}
-        
-        Role: ${session.role}
-      `);
+      try {
+        roomId = await createRoom(getServerUrl());
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Live Share: could not create a session on the server. ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        return;
+      }
+
+      const session = sessionManager.startSession(roomId);
+
+      try {
+        await openConnection(session.id);
+
+        vscode.window.showInformationMessage(
+          `Live Share Session Started. ID: ${session.id} Role: ${session.role}`,
+        );
+      } catch (error) {
+        teardown();
+
+        vscode.window.showErrorMessage(
+          `Live Share: session created (${session.id}) but connection failed. ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
     },
   );
 
@@ -42,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       const sessionId = existingSession.id;
 
-      sessionManager.stopSession();
+      teardown();
 
       vscode.window.showInformationMessage(
         `Live Share session stopped: ${sessionId}`,
@@ -101,9 +174,21 @@ export function activate(context: vscode.ExtensionContext) {
 
       const session = sessionManager.joinSession(sessionId);
 
-      vscode.window.showInformationMessage(
-        `Joined Live Share session: ${session.id}`,
-      );
+      try {
+        await openConnection(session.id);
+
+        vscode.window.showInformationMessage(
+          `Joined Live Share session: ${session.id}`,
+        );
+      } catch (error) {
+        teardown();
+
+        vscode.window.showErrorMessage(
+          `Live Share: could not join session ${session.id}. Check the session ID and server URL. ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
     },
   );
 
@@ -116,5 +201,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  sessionManager.stopSession();
+  teardown();
 }
