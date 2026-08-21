@@ -146,3 +146,6 @@ vite.config.ts.timestamp-*
 extension/node_modules/
 extension/out/
 extension/*.vsix
+
+# Blume docs runtime
+.blume/
