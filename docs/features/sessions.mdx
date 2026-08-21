@@ -1,0 +1,68 @@
+---
+title: Sessions
+description: Creating, joining, and tearing down Live Share sessions.
+sidebar:
+  label: Sessions
+  order: 1
+---
+
+<Badge variant="success">Shipped</Badge>
+
+A session is a room on the relay server plus one WebSocket connection. The
+host creates the room; guests join by ID.
+
+<Tabs>
+  <Tab title="Host">
+
+1. Run **Live Share: Start Session**.
+2. The extension `POST`s `/rooms` and receives a server-assigned ID.
+3. The WebSocket opens with `?room=<id>`; the glass panel slides in beside
+   your editor.
+
+</Tab>
+  <Tab title="Guest">
+
+1. Run **Live Share: Join Session** and paste the ID.
+2. The client upper-cases the input — IDs are case-insensitive to type.
+3. A nonexistent room answers close code `1008` ("Room does not exist") and
+   the extension shows an error instead of retrying forever.
+
+</Tab>
+</Tabs>
+
+## Lifecycle
+
+```txt
+startSession ──▶ POST /rooms ──▶ ws://…/?room=ID ──▶ { type: "connected" }
+     │                                                        │
+     │                                                        ▼
+     │                                          presence + sync start here
+stopSession ──▶ ws.close(1000) ──▶ teardown everything
+```
+
+## What tears a session down
+
+<Expandable title="Teardown triggers">
+
+- **Stop command** — *Live Share: Stop Session*
+- **Disconnect** — socket close (network loss, server restart) shows a warning
+- **IDE shutdown** — `deactivate()` runs the same teardown path
+
+All three: close the socket, stop presence timers, dispose CRDT docs, hide
+the panel and status bar, clear peer names.
+
+</Expandable>
+
+:::danger
+Sessions created before v0.1 (local-only IDs generated in the extension) are
+deprecated. Modern sessions always use server-assigned room IDs — a local ID
+can never be joined by anyone else.
+:::
+
+<Panel title="Reconnect behavior">
+
+Transient drops auto-reconnect every 3 seconds until the session is stopped.
+Policy closes (`1000`, `1008`) do **not** reconnect — those are intentional
+ends.
+
+</Panel>
