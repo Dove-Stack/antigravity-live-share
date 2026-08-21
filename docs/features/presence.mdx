@@ -1,0 +1,59 @@
+---
+title: Presence
+description: Shared cursors and selections, rendered live as colored editor decorations.
+sidebar:
+  label: Presence
+  order: 2
+---
+
+<Badge variant="success">Shipped</Badge>
+
+Every peer's cursor and selection appears in your editors as a tinted,
+bordered range with a hover card showing their name.
+
+## How it works
+
+1. Selection changes are queued, not sent — a 150ms interval flushes the
+   latest state per keystroke burst.
+2. Payloads carry **workspace-relative paths** and document offsets:
+
+```json
+{
+  "type": "presence.cursor",
+  "name": "Jane",
+  "path": "src/app.ts",
+  "selections": [{ "anchor": 10, "head": 42 }]
+}
+```
+
+3. The server wraps it as `{ type: "message", from: "<clientId>", data: … }`
+   and fans it to the rest of the room.
+4. Each client maps `clientId → decoration type`; colors are hashed from the
+   ID across a six-color palette.
+
+## Try it right here
+
+This island simulates two peers through the relay — watch the event log and
+the purple cursor glow move between panes:
+
+<SessionSimulator />
+
+## Details
+
+<Expandable title="How decorations render">
+
+- Collapsed cursors (single point) render as a one-character highlight so
+  they're visible even on empty lines' neighbors.
+- When a peer switches files, their old decorations are cleared from the
+  previous editor before being drawn in the new one.
+- Leaving peers are disposed via the server's `peer.left` frame.
+
+</Expandable>
+
+<Expandable title="Why offsets, not positions?">
+
+`{ line, character }` pairs are fragile under concurrent edits — a CRDT insert
+above you shifts every line. Document offsets are resolved against the synced
+Yjs text, so presence stays anchored to the same logical location.
+
+</Expandable>
