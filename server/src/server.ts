@@ -121,7 +121,21 @@ websocketServer.on("connection", (socket, request) => {
   }
 
   socket.on("message", (data) => {
-    const message = data.toString("utf-8");
+    let payload: unknown;
+
+    try {
+      payload = JSON.parse(data.toString("utf-8"));
+    } catch {
+      socket.send(
+        JSON.stringify({
+          type: "error",
+          message: "Invalid JSON message.",
+        }),
+      );
+      return;
+    }
+
+    const message = JSON.stringify(payload);
 
     for (const other of room.clients.values()) {
       if (other.id !== clientId && other.socket.readyState === WebSocket.OPEN) {
@@ -145,7 +159,7 @@ websocketServer.on("connection", (socket, request) => {
       if (other.socket.readyState === WebSocket.OPEN) {
         other.socket.send(
           JSON.stringify({
-            type: "peer-left",
+            type: "peer.left",
             clientId: client.id,
           }),
         );
