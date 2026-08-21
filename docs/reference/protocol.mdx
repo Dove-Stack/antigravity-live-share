@@ -65,6 +65,8 @@ in a relay envelope; everything else is point-to-point semantics.
 | `presence.cursor` | both ways | Cursor/selection offsets per relative path |
 | `doc.state` | host → guests | Full initial Yjs state for one file |
 | `doc.update` | both ways | Binary CRDT delta (base64) for one file |
+| `voice.offer` / `voice.answer` | peer → peer (via `to`) | WebRTC session descriptions for the voice mesh |
+| `voice.ice` | peer → peer (via `to`) | ICE candidate for the voice mesh |
 
 :::warning
 Invalid JSON inbound earns an `error` frame and is dropped — the relay never
