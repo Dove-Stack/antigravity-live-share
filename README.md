@@ -4,7 +4,7 @@ Real-time collaborative development for the [Antigravity IDE](https://antigravit
 
 > **Status:** active development · `v0.1.0` · MIT licensed
 >
-> 🟣 Sessions &nbsp;·&nbsp; 🟣 Presence &nbsp;·&nbsp; 🟣 Glass UI &nbsp;·&nbsp; 🟣 Text Sync (beta) &nbsp;·&nbsp; 🟣 Voice Chat &nbsp;·&nbsp; ⚪ Live Video *(in progress)* &nbsp;·&nbsp; ⚪ Join Approval
+> 🟣 Sessions &nbsp;·&nbsp; 🟣 Presence &nbsp;·&nbsp; 🟣 Glass UI &nbsp;·&nbsp; 🟣 Text Sync (beta) &nbsp;·&nbsp; 🟣 Voice Chat &nbsp;·&nbsp; 🟣 Live Video &nbsp;·&nbsp; ⚪ Join Approval *(next)*
 
 ## 📖 Documentation
 
@@ -50,7 +50,7 @@ Highlights: [Quickstart](docs/getting-started/quickstart.mdx) · [Architecture](
 | **Presence** | Peer cursors/selections as colored decorations, hashed per client ID, 150ms throttle |
 | **Text sync** | One Yjs doc per file; binary deltas over state vectors — concurrent edits merge cleanly |
 | **Voice chat** | Full WebRTC mesh, opus over data channels, ffmpeg capture / ffplay playback (capability-detected) |
-| **Live video** | Webcam frames over the same mesh, rendered in a glass webview panel |
+| **Live video** | Webcam MJPEG frames over the same mesh, rendered in a glass webview panel |
 | **Glass UI** | Status bar entry point + glassmorphism panel: role badge, copy ID, live peer list |
 | **Docs site** | Purple + light-grey Blume site with search, EN/ES i18n, versioning-ready, interactive islands |
 
@@ -125,8 +125,8 @@ git log --oneline   # the history reads like a changelog — because it is one
 
 ```text
 ✅ client–server connection   ✅ presence            ✅ glass UI panel
-✅ text sync (CRDT)           ✅ voice chat          ✅ docs site
-▶️ live video                 ⬜ join approval       ⬜ read-only guests
+✅ text sync (CRDT)           ✅ voice chat          ✅ live video
+✅ docs site                  ▶️ join approval       ⬜ read-only guests
 ```
 
 ## License
