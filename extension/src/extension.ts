@@ -6,14 +6,83 @@ import {
   createRoom,
 } from "./connection";
 import { PresenceManager } from "./presence";
+import { PanelState, PeerInfo, SessionPanel } from "./panel";
 import { SessionManager } from "./session";
 import { SessionStatusBar } from "./statusBar";
 
 const sessionManager = new SessionManager();
 const statusBar = new SessionStatusBar();
+const peerNames = new Map<string, string>();
 
 let connection: LiveShareConnection | undefined;
 let presence: PresenceManager | undefined;
+
+const panel = new SessionPanel({
+  onCopy: () => {
+    const session = sessionManager.getSession();
+
+    if (session) {
+      void vscode.env.clipboard.writeText(session.id);
+      vscode.window.showInformationMessage(
+        `Session ${session.id} copied to clipboard.`,
+      );
+    }
+  },
+  onLeave: () => {
+    vscode.commands.executeCommand("liveShare.stopSession");
+  },
+});
+
+function currentState(): PanelState | undefined {
+  const session = sessionManager.getSession();
+
+  if (!session) {
+    return undefined;
+  }
+
+  const peers: PeerInfo[] = Array.from(peerNames.entries()).map(
+    ([id, name]) => ({ id, name }),
+  );
+
+  return {
+    sessionId: session.id,
+    role: session.role,
+    serverUrl: getServerUrl(),
+    peers,
+  };
+}
+
+function refreshUi(): void {
+  const peers: PeerInfo[] = Array.from(peerNames.entries()).map(
+    ([id, name]) => ({ id, name }),
+  );
+
+  statusBar.setPeers(peers);
+
+  const state = currentState();
+
+  if (state) {
+    panel.setState(state);
+  }
+}
+
+function setPeerName(clientId: string, name: string): void {
+  if (!name) {
+    return;
+  }
+
+  if (peerNames.get(clientId) !== name) {
+    peerNames.set(clientId, name);
+    refreshUi();
+  }
+}
+
+function removePeer(clientId: string): void {
+  if (peerNames.delete(clientId)) {
+    presence?.removePeer(clientId);
+    refreshUi();
+  }
+}
 
 function getServerUrl(): string {
   return vscode.workspace
@@ -26,32 +95,54 @@ function handleServerEvent(event: ServerEvent): void {
     case "connected":
       presence = new PresenceManager(() => connection);
       presence.start();
+      connection?.send({
+        type: "presence.hello",
+        name: process.env.USERNAME || process.env.USER || "peer",
+      });
       break;
     case "message": {
       const from = typeof event.from === "string" ? event.from : "";
 
       if (from && typeof event.data === "string") {
         try {
-          presence?.handleMessage(from, JSON.parse(event.data));
+          const payload = JSON.parse(event.data);
+
+          if (payload?.type === "presence.hello") {
+            setPeerName(from, String(payload.name ?? "guest"));
+            break;
+          }
+
+          if (payload?.type === "presence.cursor") {
+            setPeerName(from, String(payload.name ?? "guest"));
+          }
+
+          presence?.handleMessage(from, payload);
         } catch {
           // Ignore malformed relayed payloads.
         }
       }
       break;
     }
-    case "peer.joined":
-      statusBar.peerJoined();
+    case "peer.joined": {
+      const clientId =
+        typeof event.clientId === "string" ? event.clientId : "";
+
+      if (clientId && !peerNames.has(clientId)) {
+        peerNames.set(clientId, "guest");
+        refreshUi();
+      }
+
       vscode.window.showInformationMessage("Live Share: a peer joined the session.");
       break;
+    }
     case "peer.left": {
       const clientId =
         typeof event.clientId === "string" ? event.clientId : "";
 
       if (clientId) {
-        presence?.removePeer(clientId);
+        removePeer(clientId);
       }
 
-      statusBar.peerLeft();
       vscode.window.showInformationMessage("Live Share: a peer left the session.");
       break;
     }
@@ -63,6 +154,7 @@ function handleConnectionClosed(code: number, reason: string): void {
   presence?.stop();
   presence = undefined;
   statusBar.deactivate();
+  panel.dispose();
 
   const detail = reason || `close code ${code}`;
 
@@ -88,6 +180,8 @@ function teardown(): void {
   presence?.stop();
   presence = undefined;
   statusBar.deactivate();
+  panel.dispose();
+  peerNames.clear();
   sessionManager.stopSession();
 }
 
@@ -123,6 +217,7 @@ export function activate(context: vscode.ExtensionContext) {
         await openConnection(session.id);
 
         statusBar.activate(session.id, session.role);
+        panel.show(currentState()!);
 
         vscode.window.showInformationMessage(
           `Live Share Session Started. ID: ${session.id} Role: ${session.role}`,
@@ -216,6 +311,7 @@ export function activate(context: vscode.ExtensionContext) {
         await openConnection(session.id);
 
         statusBar.activate(session.id, session.role);
+        panel.show(currentState()!);
 
         vscode.window.showInformationMessage(
           `Joined Live Share session: ${session.id}`,
@@ -232,6 +328,22 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  const showPanel = vscode.commands.registerCommand(
+    "liveShare.showPanel",
+    () => {
+      const state = currentState();
+
+      if (!state) {
+        vscode.window.showInformationMessage(
+          "There is no active Live Share session.",
+        );
+        return;
+      }
+
+      panel.show(state);
+    },
+  );
+
   const selectionChange = vscode.window.onDidChangeTextEditorSelection(() => {
     presence?.queueSend();
   });
@@ -241,6 +353,7 @@ export function activate(context: vscode.ExtensionContext) {
     stopSession,
     showSession,
     joinSession,
+    showPanel,
     selectionChange,
   );
 }
