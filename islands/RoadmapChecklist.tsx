@@ -13,7 +13,7 @@ const FEATURES: Feature[] = [
   { name: "Presence (cursors & selections)", status: "shipped", note: "Colored decorations, 150ms throttle" },
   { name: "Glassmorphism session panel", status: "shipped", note: "Webview UI, purple + light grey" },
   { name: "CRDT text sync (Yjs)", status: "shipped", note: "Concurrent-edit safe merging" },
-  { name: "Voice chat", status: "planned", note: "WebRTC P2P over existing signaling" },
+  { name: "Voice chat", status: "shipped", note: "WebRTC data-channel audio, opus, ffmpeg capture" },
   { name: "Live video", status: "planned", note: "WebRTC video tracks, same transport" },
   { name: "Join approval & read-only guests", status: "planned", note: "Host-side access control" },
 ];
