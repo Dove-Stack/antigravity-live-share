@@ -14,7 +14,7 @@ export class SessionManager {
   private session: LiveShareSession | undefined;
 
   startSession(): LiveShareSession {
-    const id = randomBytes(6).toString("hex").toUpperCase();
+    const id = this.generateSessionId();
 
     this.session = {
       id,
