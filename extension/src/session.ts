@@ -1,7 +1,3 @@
-// import { randomBytes } from "crypto";
-
-import { randomBytes } from "node:crypto";
-
 export type SessionRole = "host" | "guest";
 
 export interface LiveShareSession {
@@ -13,9 +9,7 @@ export interface LiveShareSession {
 export class SessionManager {
   private session: LiveShareSession | undefined;
 
-  startSession(): LiveShareSession {
-    const id = this.generateSessionId();
-
+  startSession(id: string): LiveShareSession {
     this.session = {
       id,
       createdAt: Date.now(),
@@ -47,9 +41,5 @@ export class SessionManager {
 
   stopSession(): void {
     this.session = undefined;
-  }
-
-  private generateSessionId(): string {
-    return randomBytes(6).toString("hex").toUpperCase();
   }
 }
