@@ -8,6 +8,7 @@ import {
 import { PresenceManager } from "./presence";
 import { PanelState, PeerInfo, SessionPanel } from "./panel";
 import { SessionManager } from "./session";
+import { SyncManager } from "./sync";
 import { SessionStatusBar } from "./statusBar";
 
 const sessionManager = new SessionManager();
@@ -16,6 +17,7 @@ const peerNames = new Map<string, string>();
 
 let connection: LiveShareConnection | undefined;
 let presence: PresenceManager | undefined;
+let sync: SyncManager | undefined;
 
 const panel = new SessionPanel({
   onCopy: () => {
@@ -95,6 +97,13 @@ function handleServerEvent(event: ServerEvent): void {
     case "connected":
       presence = new PresenceManager(() => connection);
       presence.start();
+
+      sync = new SyncManager(
+        () => connection,
+        sessionManager.getSession()?.role === "host",
+      );
+      sync.start();
+
       connection?.send({
         type: "presence.hello",
         name: process.env.USERNAME || process.env.USER || "peer",
@@ -106,6 +115,14 @@ function handleServerEvent(event: ServerEvent): void {
       if (from && typeof event.data === "string") {
         try {
           const payload = JSON.parse(event.data);
+
+          if (
+            payload?.type === "doc.state" ||
+            payload?.type === "doc.update"
+          ) {
+            sync?.handleRelay(from, payload);
+            break;
+          }
 
           if (payload?.type === "presence.hello") {
             setPeerName(from, String(payload.name ?? "guest"));
@@ -153,6 +170,8 @@ function handleConnectionClosed(code: number, reason: string): void {
   connection = undefined;
   presence?.stop();
   presence = undefined;
+  sync?.stop();
+  sync = undefined;
   statusBar.deactivate();
   panel.dispose();
 
@@ -179,6 +198,8 @@ function teardown(): void {
   connection = undefined;
   presence?.stop();
   presence = undefined;
+  sync?.stop();
+  sync = undefined;
   statusBar.deactivate();
   panel.dispose();
   peerNames.clear();
