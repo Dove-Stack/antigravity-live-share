@@ -15,7 +15,8 @@
     "onCommand:liveShare.startSession",
     "onCommand:liveShare.stopSession",
     "onCommand:liveShare.showSession",
-    "onCommand:liveShare.joinSession"
+    "onCommand:liveShare.joinSession",
+    "onCommand:liveShare.showPanel"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -35,6 +36,10 @@
       {
         "command": "liveShare.joinSession",
         "title": "Live Share: Join Session"
+      },
+      {
+        "command": "liveShare.showPanel",
+        "title": "Live Share: Open Session Panel"
       }
     ],
     "configuration": {
