@@ -41,9 +41,9 @@ real collaboration suite.
 </Steps>
 
 :::warning
-**Voice chat is shipped** (v0.2 of the roadmap): WebRTC data-channel audio
-with opus codec, microphone capture via `ffmpeg`, playback via `ffplay` — both
-capability-detected at runtime. **Live video remains a design-stage promise.**
+**Voice chat and live video are shipped.** Both ride the same WebRTC mesh and
+the existing relay — no media server, no new infrastructure. **Join approval
+and read-only guests remain design-stage promises.**
 :::
 
 ## Voice chat, as built
@@ -67,10 +67,29 @@ capability-detected at runtime. **Live video remains a design-stage promise.**
       ffplay on the far side.
 </Steps>
 
+## Live video, as built
+
+<Steps>
+  1. **Same mesh, second channel**
+
+      Each peer pair gets a `video` data channel alongside the voice one, with
+      its own `video.offer` / `video.answer` / `video.ice` signaling.
+
+  2. **MJPEG over the channel**
+
+      ffmpeg captures the webcam at 640px/10fps and pipes an MJPEG stream;
+      frames are split on JPEG markers, chunked at 16KB, and sent as JSON.
+
+  3. **Rendered in glass**
+
+      The receiver reassembles frames and posts them into a glassmorphism
+      webview panel — one translucent tile per peer with a live indicator.
+</Steps>
+
 :::note
 No camera? No mic? No FFmpeg? Signaling still works and text/presence/sync are
-unaffected — voice degrades to a clear "audio unavailable" message instead of
-breaking anything.
+unaffected — voice and video degrade to a clear "unavailable" message instead
+of breaking anything.
 :::
 
 ## Access control, in three rules
