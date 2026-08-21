@@ -1,0 +1,72 @@
+---
+title: Big Promises
+description: The ambitious features on the horizon — voice chat, live video, and access control — and how they'll work.
+sidebar:
+  label: Big Promises
+  order: 2
+---
+
+These are the commitments that turn Live Share from "shared cursors" into a
+real collaboration suite.
+
+<CardGroup cols={3}>
+  <Card title="Voice chat" icon="mic">
+    P2P audio between all peers. No media server.
+  </Card>
+  <Card title="Live video" icon="video">
+    Optional camera tracks over the same peer connections.
+  </Card>
+  <Card title="Join approval" icon="shield-check">
+    Hosts approve or deny guests; read-only mode for spectators.
+  </Card>
+</CardGroup>
+
+## How voice & video work without new infrastructure
+
+<Steps>
+  1. **Signal over what exists**
+
+      SDP offers, answers, and ICE candidates are just JSON frames — they ride
+      the existing WebSocket relay exactly like `presence.cursor`.
+
+  2. **Connect peer-to-peer**
+
+      Each peer pair forms a WebRTC connection; audio and video never touch
+      the server.
+
+  3. **Degrade gracefully**
+
+      No camera? Voice-only. No mic? Watch-only. The relay keeps working for
+      text and presence regardless.
+</Steps>
+
+:::warning
+Voice and video are **design-stage promises** — nothing in the repo yet. The
+signaling schema below is the plan, not shipped code.
+:::
+
+## Access control, in three rules
+
+<Accordion>
+  <AccordionItem title="1. Nobody reads before approval">
+    Guests connect but receive no `doc.state` and no presence until the host
+    approves — the gate sits in the client, before any content flows.
+  </AccordionItem>
+  <AccordionItem title="2. Read-only is a server-side role">
+    The relay drops `doc.update` frames from read-only members, so trust
+    doesn't depend on client honesty.
+  </AccordionItem>
+  <AccordionItem title="3. Room tokens, not obscurity">
+    v0.2 sessions mint a share token alongside the ID; joining without a valid
+    token requires host approval.
+  </AccordionItem>
+</Accordion>
+
+<Prompt
+  description="Track implementation progress with your agent."
+  actions={["copy"]}
+>
+  Check the antigravity-live-share repo for a feature/voice-chat branch. If it
+  exists, summarize the WebRTC signaling messages implemented so far; if not,
+  say which roadmap item is currently in progress instead.
+</Prompt>
