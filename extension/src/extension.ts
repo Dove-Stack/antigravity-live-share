@@ -9,6 +9,8 @@ import { PresenceManager } from "./presence";
 import { PanelState, PeerInfo, SessionPanel } from "./panel";
 import { SessionManager } from "./session";
 import { SyncManager } from "./sync";
+import { VideoManager } from "./video";
+import { VideoPanel } from "./videoPanel";
 import { VoiceManager } from "./voice";
 import { SessionStatusBar } from "./statusBar";
 
@@ -20,6 +22,8 @@ let connection: LiveShareConnection | undefined;
 let presence: PresenceManager | undefined;
 let sync: SyncManager | undefined;
 let voice: VoiceManager | undefined;
+let video: VideoManager | undefined;
+let videoPanel: VideoPanel | undefined;
 let myClientId: string | undefined;
 
 const panel = new SessionPanel({
@@ -121,6 +125,23 @@ function handleServerEvent(event: ServerEvent): void {
         },
       });
 
+      video?.stop();
+      videoPanel?.close();
+      videoPanel = undefined;
+
+      video = new VideoManager({
+        getClientId: () => myClientId,
+        getPeers: () => Array.from(peerNames.keys()),
+        send: (relayEvent) => connection?.send(relayEvent),
+        onFrame: (peerId, jpeg) => {
+          videoPanel?.ensurePeer(peerId);
+          videoPanel?.showFrame(peerId, jpeg);
+        },
+        onVideoStateChanged: (active) => {
+          statusBar.setVideo(active);
+        },
+      });
+
       connection?.send({
         type: "presence.hello",
         name: process.env.USERNAME || process.env.USER || "peer",
@@ -138,6 +159,14 @@ function handleServerEvent(event: ServerEvent): void {
             payload.type.startsWith("voice.")
           ) {
             voice?.handleRelay(from, payload);
+            break;
+          }
+
+          if (
+            typeof payload?.type === "string" &&
+            payload.type.startsWith("video.")
+          ) {
+            video?.handleRelay(from, payload);
             break;
           }
 
@@ -172,6 +201,7 @@ function handleServerEvent(event: ServerEvent): void {
       if (clientId && !peerNames.has(clientId)) {
         peerNames.set(clientId, "guest");
         voice?.addPeer(clientId);
+        video?.addPeer(clientId);
         refreshUi();
       }
 
@@ -185,6 +215,8 @@ function handleServerEvent(event: ServerEvent): void {
       if (clientId) {
         removePeer(clientId);
         voice?.removePeer(clientId);
+        video?.removePeer(clientId);
+        videoPanel?.removePeer(clientId);
       }
 
       vscode.window.showInformationMessage("Live Share: a peer left the session.");
@@ -201,6 +233,10 @@ function handleConnectionClosed(code: number, reason: string): void {
   sync = undefined;
   voice?.stop();
   voice = undefined;
+  video?.stop();
+  video = undefined;
+  videoPanel?.close();
+  videoPanel = undefined;
   myClientId = undefined;
   statusBar.deactivate();
   panel.dispose();
@@ -232,6 +268,10 @@ function teardown(): void {
   sync = undefined;
   voice?.stop();
   voice = undefined;
+  video?.stop();
+  video = undefined;
+  videoPanel?.close();
+  videoPanel = undefined;
   myClientId = undefined;
   statusBar.deactivate();
   panel.dispose();
@@ -439,6 +479,58 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  const toggleVideo = vscode.commands.registerCommand(
+    "liveShare.toggleVideo",
+    () => {
+      const session = sessionManager.getSession();
+
+      if (!session) {
+        vscode.window.showInformationMessage(
+          "Start or join a Live Share session before enabling video.",
+        );
+        return;
+      }
+
+      if (!video) {
+        vscode.window.showWarningMessage(
+          "Video is unavailable — there is no active connection.",
+        );
+        return;
+      }
+
+      if (video.isActive()) {
+        video.stop();
+        videoPanel?.close();
+        videoPanel = undefined;
+        vscode.window.showInformationMessage("Live video stopped.");
+        return;
+      }
+
+      video.start();
+
+      const result = video.enableCamera();
+
+      if (result.ok) {
+        videoPanel = new VideoPanel(() => {
+          // Panel closed by the user — keep the mesh, stop the camera.
+          video?.stopCamera();
+        });
+
+        for (const peerId of peerNames.keys()) {
+          videoPanel.ensurePeer(peerId);
+        }
+
+        vscode.window.showInformationMessage(
+          "Live video on — your camera is shared with peers.",
+        );
+      } else {
+        vscode.window.showWarningMessage(
+          `Video signaling active, but no camera available. ${result.error}`,
+        );
+      }
+    },
+  );
+
   const selectionChange = vscode.window.onDidChangeTextEditorSelection(() => {
     presence?.queueSend();
   });
@@ -450,6 +542,7 @@ export function activate(context: vscode.ExtensionContext) {
     joinSession,
     showPanel,
     toggleVoice,
+    toggleVideo,
     selectionChange,
   );
 }
