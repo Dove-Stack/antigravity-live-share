@@ -1,0 +1,88 @@
+---
+title: Protocol
+description: Every frame on the wire — envelopes, server events, and client payloads.
+sidebar:
+  label: Protocol
+  order: 1
+---
+
+All traffic is UTF-8 JSON over one WebSocket. The server wraps client payloads
+in a relay envelope; everything else is point-to-point semantics.
+
+## Relay envelope
+
+<TypeTable
+  type={{
+    type: {
+      type: '"connected" | "peer.joined" | "peer.left" | "message" | "error"',
+      required: true,
+      description: "Frame kind emitted by the server.",
+    },
+    clientId: {
+      type: "string",
+      description: "Server-assigned ID (8 hex chars) for the sender or subject peer.",
+    },
+    roomId: {
+      type: "string",
+      description: "Present on `connected` and `peer.joined`.",
+    },
+    from: {
+      type: "string",
+      description: "Sender's clientId — only on `message` frames.",
+    },
+    data: {
+      type: "string",
+      description: "JSON-stringified client payload — only on `message` frames.",
+    },
+    message: {
+      type: "string",
+      description: "Human-readable error text — only on `error` frames.",
+    },
+  }}
+/>
+
+<CodeGroup>
+
+```json Server → you (hello)
+{ "type": "connected", "clientId": "3790E593", "roomId": "5ABAFAB9FC07" }
+```
+
+```json Server → others (join notice)
+{ "type": "peer.joined", "clientId": "A1B2C3D4", "roomId": "5ABAFAB9FC07" }
+```
+
+```json You → peers (relayed verbatim)
+{ "type": "message", "from": "3790E593", "data": "{\"type\":\"presence.hello\",\"name\":\"Jane\"}" }
+```
+
+</CodeGroup>
+
+## Client payloads
+
+| Payload | Direction | Purpose |
+| --- | --- | --- |
+| `presence.hello` | both ways | Introduce a display name after connect |
+| `presence.cursor` | both ways | Cursor/selection offsets per relative path |
+| `doc.state` | host → guests | Full initial Yjs state for one file |
+| `doc.update` | both ways | Binary CRDT delta (base64) for one file |
+
+:::warning
+Invalid JSON inbound earns an `error` frame and is dropped — the relay never
+crashes on malformed input. Binary data must ride base64 inside the JSON.
+:::
+
+## HTTP surface
+
+<CodeGroup>
+
+```bash Health
+curl http://localhost:3000/health
+# { "status": "ok", "rooms": 2 }
+```
+
+```bash Create room
+curl -X POST http://localhost:3000/rooms
+# { "id": "5ABAFAB9FC07", "createdAt": 1755772800000 }
+```
+
+</CodeGroup>
