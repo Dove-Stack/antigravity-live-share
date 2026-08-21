@@ -1,0 +1,38 @@
+---
+title: Inicio rápido
+description: Pon una sesión de Live Share en marcha entre dos máquinas en menos de dos minutos.
+sidebar:
+  label: Inicio rápido
+  order: 1
+---
+
+<Steps>
+  1. **Instala el servidor**
+
+      ```bash
+      cd server && npm install && npm run compile && npm start
+      # Live Share server listening on http://localhost:3000
+      ```
+
+  2. **Compila la extensión**
+
+      ```bash
+      cd extension && npm install && npm run compile
+      ```
+
+  3. **Configura la URL**
+
+      ```json
+      { "liveShare.serverUrl": "http://localhost:3000" }
+      ```
+
+  4. **Colabora**
+
+      Anfitrión: *Live Share: Start Session*. Invitado: *Live Share: Join
+      Session* con el ID de la sesión.
+</Steps>
+
+:::warning
+La URL por defecto apunta a `localhost`. Para sesiones entre máquinas,
+despliega el servidor y ajusta la configuración.
+:::
