@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { PeerInfo } from "./panel";
 
 export class SessionStatusBar {
   private readonly item = vscode.window.createStatusBarItem(
@@ -8,43 +9,57 @@ export class SessionStatusBar {
 
   private sessionId = "";
   private role = "";
-  private peers = 0;
+  private peers: PeerInfo[] = [];
 
   activate(sessionId: string, role: string): void {
     this.sessionId = sessionId;
     this.role = role;
-    this.peers = 0;
+    this.peers = [];
 
-    this.item.command = "liveShare.showSession";
+    this.item.command = "liveShare.showPanel";
     this.item.tooltip = new vscode.MarkdownString(
-      `**Live Share active**\n\nSession: \`${sessionId}\`\nRole: ${role}\n\nClick to copy the session ID.`,
+      `**Live Share active**\n\nSession: \`${sessionId}\`\nRole: ${role}\n\nClick to open the session panel.`,
     );
 
     this.render();
     this.item.show();
   }
 
-  peerJoined(): void {
-    this.peers += 1;
+  setPeers(peers: PeerInfo[]): void {
+    this.peers = peers;
     this.render();
-  }
 
-  peerLeft(): void {
-    this.peers = Math.max(0, this.peers - 1);
-    this.render();
+    this.item.tooltip = new vscode.MarkdownString(
+      [
+        `**Live Share active**`,
+        ``,
+        `Session: \`${this.sessionId}\``,
+        `Role: ${this.role}`,
+        ``,
+        peers.length === 0
+          ? `_No peers connected._`
+          : `**Peers**\n${peers.map((peer) => `- ${peer.name} (\`${peer.id}\`)`).join("\n")}`,
+        ``,
+        `Click to open the session panel.`,
+      ].join("\n"),
+    );
   }
 
   deactivate(): void {
     this.item.hide();
     this.sessionId = "";
     this.role = "";
-    this.peers = 0;
+    this.peers = [];
   }
 
   private render(): void {
-    const peersLabel =
-      this.peers === 1 ? "1 peer" : `${this.peers} peers`;
+    const label =
+      this.peers.length === 1 ? "1 peer" : `${this.peers.length} peers`;
 
-    this.item.text = `$(broadcast) ${this.role}: ${this.sessionId} ($(person) ${peersLabel})`;
+    this.item.text = `$(broadcast) Live Share · $(person) ${label}`;
+    this.item.backgroundColor =
+      this.peers.length > 0
+        ? new vscode.ThemeColor("statusBarItem.warningBackground")
+        : undefined;
   }
 }
