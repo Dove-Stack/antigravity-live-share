@@ -36,7 +36,17 @@
         "command": "liveShare.joinSession",
         "title": "Live Share: Join Session"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Live Share",
+      "properties": {
+        "liveShare.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the Live Share collaboration server."
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",
@@ -45,12 +55,15 @@
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@types/vscode": "^1.90.0",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Dove-Stack/antigravity-live-share.git"
   },
-  "homepage": "https://github.com/Dove-Stack/antigravity-live-share"
+  "homepage": "https://github.com/Dove-Stack/antigravity-live-share",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
 }
-
