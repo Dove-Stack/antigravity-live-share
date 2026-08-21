@@ -1,0 +1,57 @@
+---
+title: Glass UI
+description: The glassmorphism design system — purple, light grey, and translucent surfaces everywhere.
+sidebar:
+  label: Glass UI
+  order: 4
+---
+
+<Badge variant="accent">New</Badge>
+
+The session panel is a webview rendered with real glassmorphism — the same
+design language as these docs.
+
+## The palette
+
+<Color variant="table">
+  <Color.Row>
+    <Color.Item name="Accent (light)" value="#7C3AED" />
+    <Color.Item name="Accent (dark)" value="#A78BFA" />
+    <Color.Item name="Surface (light)" value="#F4F4F5" />
+    <Color.Item name="Surface (dark)" value="#0B0A12" />
+    <Color.Item name="Peer blue" value="#3B82F6" />
+    <Color.Item name="Peer green" value="#22C55E" />
+  </Color.Row>
+</Color>
+
+## Recipe
+
+The glass effect is three layers stacked on a dark gradient with blurred
+color blobs behind it:
+
+```css
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(28px) saturate(80%);
+  border: 3px solid rgba(224, 224, 224, 0.2);
+  box-shadow: inset 0 0 4px 2px rgba(255, 255, 255, 0.35);
+  border-radius: 40px;
+}
+
+/* angled reflection + top sheen */
+.glass-card::before { background: linear-gradient(to left top, rgba(255,255,255,.175), transparent 50%); }
+.glass-card::after  { background: linear-gradient(to bottom, rgba(255,255,255,.105), transparent); }
+```
+
+## What lives in the panel
+
+- Avatar header with the server URL and a broadcast bell
+- A role badge — green for **host**, blue for **guest**
+- The session ID in large monospace with **Copy** and **Leave** glass buttons
+- A live peer list: mini avatars, names, IDs, and green presence dots
+
+:::tip
+VS Code status bars are plain text — so the native status bar item acts as the
+compact entry point (`$(broadcast) Live Share · N peers`), and clicking it
+opens the full glass panel. Text chrome outside, glass inside.
+:::
