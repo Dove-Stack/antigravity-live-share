@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { LiveShareConnection } from "./connection";
+import { toRelativePath } from "./workspacePaths";
 
 const SEND_INTERVAL_MS = 150;
 const COLORS = [
@@ -85,9 +86,10 @@ export class PresenceManager {
     }
 
     for (const editor of vscode.window.visibleTextEditors) {
-      const matches = editor.document.uri.fsPath === event.path;
+      const editorPath = toRelativePath(editor.document.uri);
+      const matches = editorPath === event.path;
 
-      if (peer.path && editor.document.uri.fsPath === peer.path && !matches) {
+      if (peer.path && editorPath === peer.path && !matches) {
         editor.setDecorations(peer.decoration, []);
       }
 
@@ -136,7 +138,7 @@ export class PresenceManager {
     }
 
     for (const editor of vscode.window.visibleTextEditors) {
-      if (editor.document.uri.fsPath === peer.path) {
+      if (toRelativePath(editor.document.uri) === peer.path) {
         editor.setDecorations(peer.decoration, []);
       }
     }
@@ -183,7 +185,7 @@ export class PresenceManager {
     const event: CursorEvent = {
       type: "presence.cursor",
       name: process.env.USERNAME || process.env.USER || "peer",
-      path: editor.document.uri.fsPath,
+      path: toRelativePath(editor.document.uri),
       selections: editor.selections.map((selection) => ({
         anchor: editor.document.offsetAt(selection.anchor),
         head: editor.document.offsetAt(selection.active),
