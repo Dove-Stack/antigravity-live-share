@@ -1,0 +1,114 @@
+---
+title: Quickstart
+description: Get a Live Share session running between two machines in under two minutes.
+sidebar:
+  label: Quickstart
+  order: 1
+---
+
+Everything ships as plain Node.js — no build step for the server, one compile
+for the extension.
+
+<Badge variant="accent">New</Badge> Text sync and presence are live on the
+`feature/text-sync-crdt` branch.
+
+## Prerequisites
+
+- **Node.js 22+** (extension tooling) and any Node ≥18 runtime for the server
+- **Antigravity IDE** or VS Code 1.90+
+
+## Run the collaboration server
+
+<Tabs>
+  <Tab title="npm">Run it from the `server/` folder with npm.</Tab>
+  <Tab title="pnpm">Same commands with pnpm from the `server/` folder.</Tab>
+</Tabs>
+
+<Steps>
+  1. **Install dependencies**
+
+      ```bash
+      cd server && npm install
+      ```
+
+  2. **Compile**
+
+      ```bash
+      npm run compile
+      ```
+
+  3. **Start the server**
+
+      ```bash
+      npm start
+      # Live Share server listening on http://localhost:3000
+      ```
+
+      Set `PORT` to change the port.
+</Steps>
+
+## Install the extension
+
+<Steps>
+  1. **Compile the extension**
+
+      ```bash
+      cd extension && npm install && npm run compile
+      ```
+
+  2. **Launch a dev host**
+
+      Open the `extension/` folder in Antigravity/VS Code and press
+      <kbd>F5</kbd>, or package the VSIX (`antigravity-live-share-0.1.0.vsix`
+      is already included in the repo).
+
+  3. **Point the client at your server**
+
+      Settings → search *Live Share*:
+
+      ```json
+      { "liveShare.serverUrl": "http://localhost:3000" }
+      ```
+</Steps>
+
+:::warning
+The default server URL is `http://localhost:3000`. For cross-machine sessions,
+deploy the server (or expose it over your network) and update the setting.
+:::
+
+## Start collaborating
+
+<CodeGroup>
+
+```bash Host
+1. Command palette → "Live Share: Start Session"
+2. Copy the session ID from the glass panel
+```
+
+```bash Guest
+1. Command palette → "Live Share: Join Session"
+2. Paste the session ID
+```
+
+</CodeGroup>
+
+You should see peer cursors within ~150ms of movement, and edits converge in
+both directions thanks to the CRDT layer.
+
+## Troubleshooting
+
+<Expandable title="Connection failed — what now?">
+
+- Check `/health` on the server returns JSON with an active room count
+- Make sure both clients point at the same `liveShare.serverUrl`
+- Session IDs are case-insensitive on join — the client upper-cases them
+
+</Expandable>
+
+<Panel title="Good to know">
+
+Rooms are deleted automatically when the last peer disconnects. Stopping a
+session closes the WebSocket cleanly (close code `1000`) and tears down sync
+and presence state.
+
+</Panel>
