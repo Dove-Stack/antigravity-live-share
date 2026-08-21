@@ -14,7 +14,7 @@ const FEATURES: Feature[] = [
   { name: "Glassmorphism session panel", status: "shipped", note: "Webview UI, purple + light grey" },
   { name: "CRDT text sync (Yjs)", status: "shipped", note: "Concurrent-edit safe merging" },
   { name: "Voice chat", status: "shipped", note: "WebRTC data-channel audio, opus, ffmpeg capture" },
-  { name: "Live video", status: "planned", note: "WebRTC video tracks, same transport" },
+  { name: "Live video", status: "shipped", note: "MJPEG frames over the same mesh, glass webview" },
   { name: "Join approval & read-only guests", status: "planned", note: "Host-side access control" },
 ];
 
