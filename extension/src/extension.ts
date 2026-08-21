@@ -9,6 +9,7 @@ import { PresenceManager } from "./presence";
 import { PanelState, PeerInfo, SessionPanel } from "./panel";
 import { SessionManager } from "./session";
 import { SyncManager } from "./sync";
+import { VoiceManager } from "./voice";
 import { SessionStatusBar } from "./statusBar";
 
 const sessionManager = new SessionManager();
@@ -18,6 +19,8 @@ const peerNames = new Map<string, string>();
 let connection: LiveShareConnection | undefined;
 let presence: PresenceManager | undefined;
 let sync: SyncManager | undefined;
+let voice: VoiceManager | undefined;
+let myClientId: string | undefined;
 
 const panel = new SessionPanel({
   onCopy: () => {
@@ -95,6 +98,9 @@ function getServerUrl(): string {
 function handleServerEvent(event: ServerEvent): void {
   switch (event.type) {
     case "connected":
+      myClientId =
+        typeof event.clientId === "string" ? event.clientId : undefined;
+
       presence = new PresenceManager(() => connection);
       presence.start();
 
@@ -103,6 +109,17 @@ function handleServerEvent(event: ServerEvent): void {
         sessionManager.getSession()?.role === "host",
       );
       sync.start();
+
+      voice?.stop();
+
+      voice = new VoiceManager({
+        getClientId: () => myClientId,
+        getPeers: () => Array.from(peerNames.keys()),
+        send: (relayEvent) => connection?.send(relayEvent),
+        onVoiceStateChanged: (active, micEnabled) => {
+          statusBar.setVoice(active && micEnabled);
+        },
+      });
 
       connection?.send({
         type: "presence.hello",
@@ -115,6 +132,14 @@ function handleServerEvent(event: ServerEvent): void {
       if (from && typeof event.data === "string") {
         try {
           const payload = JSON.parse(event.data);
+
+          if (
+            typeof payload?.type === "string" &&
+            payload.type.startsWith("voice.")
+          ) {
+            voice?.handleRelay(from, payload);
+            break;
+          }
 
           if (
             payload?.type === "doc.state" ||
@@ -146,6 +171,7 @@ function handleServerEvent(event: ServerEvent): void {
 
       if (clientId && !peerNames.has(clientId)) {
         peerNames.set(clientId, "guest");
+        voice?.addPeer(clientId);
         refreshUi();
       }
 
@@ -158,6 +184,7 @@ function handleServerEvent(event: ServerEvent): void {
 
       if (clientId) {
         removePeer(clientId);
+        voice?.removePeer(clientId);
       }
 
       vscode.window.showInformationMessage("Live Share: a peer left the session.");
@@ -172,6 +199,9 @@ function handleConnectionClosed(code: number, reason: string): void {
   presence = undefined;
   sync?.stop();
   sync = undefined;
+  voice?.stop();
+  voice = undefined;
+  myClientId = undefined;
   statusBar.deactivate();
   panel.dispose();
 
@@ -200,6 +230,9 @@ function teardown(): void {
   presence = undefined;
   sync?.stop();
   sync = undefined;
+  voice?.stop();
+  voice = undefined;
+  myClientId = undefined;
   statusBar.deactivate();
   panel.dispose();
   peerNames.clear();
@@ -365,6 +398,47 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  const toggleVoice = vscode.commands.registerCommand(
+    "liveShare.toggleVoice",
+    () => {
+      const session = sessionManager.getSession();
+
+      if (!session) {
+        vscode.window.showInformationMessage(
+          "Start or join a Live Share session before enabling voice chat.",
+        );
+        return;
+      }
+
+      if (!voice) {
+        vscode.window.showWarningMessage(
+          "Voice chat is unavailable — there is no active connection.",
+        );
+        return;
+      }
+
+      if (voice.isMicEnabled()) {
+        voice.stop();
+        vscode.window.showInformationMessage("Voice chat ended.");
+        return;
+      }
+
+      voice.start();
+
+      const result = voice.enableMic();
+
+      if (result.ok) {
+        vscode.window.showInformationMessage(
+          "Voice chat on — your microphone is shared with peers.",
+        );
+      } else {
+        vscode.window.showWarningMessage(
+          `Voice signaling active, but audio is unavailable. ${result.error}`,
+        );
+      }
+    },
+  );
+
   const selectionChange = vscode.window.onDidChangeTextEditorSelection(() => {
     presence?.queueSend();
   });
@@ -375,6 +449,7 @@ export function activate(context: vscode.ExtensionContext) {
     showSession,
     joinSession,
     showPanel,
+    toggleVoice,
     selectionChange,
   );
 }
