@@ -1,0 +1,14 @@
+{
+  "name": "antigravity-live-share-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Documentation site for Antigravity Live Share, powered by Blume.",
+  "scripts": {
+    "dev": "blume dev",
+    "build": "blume build",
+    "preview": "blume preview"
+  },
+  "devDependencies": {
+    "blume": "^1.5.3"
+  }
+}
