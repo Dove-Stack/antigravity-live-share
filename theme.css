@@ -1,0 +1,35 @@
+:root {
+  --blume-accent: #7c3aed;
+  --blume-accent-foreground: #ffffff;
+  --blume-background: #f4f4f5;
+  --blume-muted: rgba(124, 58, 237, 0.06);
+  --blume-border: rgba(124, 58, 237, 0.16);
+  --blume-radius: 1rem;
+}
+
+:root[data-theme="dark"] {
+  --blume-accent: #a78bfa;
+  --blume-accent-foreground: #17123a;
+  --blume-background: #0b0a12;
+  --blume-muted: rgba(167, 139, 250, 0.08);
+  --blume-border: rgba(167, 139, 250, 0.2);
+}
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px) saturate(80%);
+  -webkit-backdrop-filter: blur(24px) saturate(80%);
+  border: 1.5px solid rgba(224, 224, 224, 0.22);
+  box-shadow:
+    inset 0 0 4px 2px rgba(255, 255, 255, 0.28),
+    0 8px 24px rgba(124, 58, 237, 0.12);
+  border-radius: calc(var(--blume-radius) * 2);
+  padding: 1.25rem 1.5rem;
+}
+
+:root[data-theme="dark"] .glass-surface {
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow:
+    inset 0 0 4px 2px rgba(167, 139, 250, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+}
