@@ -17,7 +17,8 @@
     "onCommand:liveShare.showSession",
     "onCommand:liveShare.joinSession",
     "onCommand:liveShare.showPanel",
-    "onCommand:liveShare.toggleVoice"
+    "onCommand:liveShare.toggleVoice",
+    "onCommand:liveShare.toggleVideo"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -45,6 +46,10 @@
       {
         "command": "liveShare.toggleVoice",
         "title": "Live Share: Toggle Voice Chat"
+      },
+      {
+        "command": "liveShare.toggleVideo",
+        "title": "Live Share: Toggle Video"
       }
     ],
     "configuration": {
