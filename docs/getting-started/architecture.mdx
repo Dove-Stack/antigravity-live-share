@@ -1,0 +1,114 @@
+---
+title: Architecture
+description: How the plugin, extension, relay server, and CRDT layer fit together — with diagrams and the repository layout.
+sidebar:
+  label: Architecture
+  order: 2
+---
+
+Antigravity Live Share is a three-piece system: an **extension** that lives in
+the IDE, a **signaling server** that relays events, and a **plugin manifest**
+that registers the integration with Antigravity.
+
+## Repository layout
+
+<Tree>
+  <Tree.Folder name="antigravity-live-share" defaultOpen>
+    <Tree.Folder name="extension" defaultOpen>
+      <Tree.File name="src/extension.ts" />
+      <Tree.File name="src/session.ts" />
+      <Tree.File name="src/connection.ts" />
+      <Tree.File name="src/presence.ts" />
+      <Tree.File name="src/sync.ts" />
+      <Tree.File name="src/panel.ts" />
+      <Tree.File name="src/statusBar.ts" />
+      <Tree.File name="src/workspacePaths.ts" />
+    </Tree.Folder>
+    <Tree.Folder name="server">
+      <Tree.File name="src/server.ts" />
+    </Tree.Folder>
+    <Tree.Folder name="plugins/live-share">
+      <Tree.File name="plugin.json" />
+    </Tree.Folder>
+  </Tree.Folder>
+</Tree>
+
+## System flow
+
+<Frame caption="Event flow from IDE to peers through the relay.">
+  <svg viewBox="0 0 760 300" role="img" aria-label="System architecture flow diagram">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#7c3aed" />
+      </marker>
+      <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.16"/>
+        <stop offset="100%" stopColor="#f4f4f5" stopOpacity="0.35"/>
+      </linearGradient>
+    </defs>
+
+    <rect x="20" y="40" width="150" height="60" rx="16" fill="url(#glass)" stroke="#7c3aed" strokeWidth="2"/>
+    <text x="95" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7c3aed">Antigravity IDE</text>
+    <text x="95" y="84" textAnchor="middle" fontSize="10" fill="#555">host / guest</text>
+
+    <rect x="230" y="40" width="150" height="60" rx="16" fill="url(#glass)" stroke="#7c3aed" strokeWidth="2"/>
+    <text x="305" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7c3aed">Extension</text>
+    <text x="305" y="84" textAnchor="middle" fontSize="10" fill="#555">session · sync · presence</text>
+
+    <rect x="440" y="40" width="150" height="60" rx="16" fill="url(#glass)" stroke="#7c3aed" strokeWidth="2"/>
+    <text x="515" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7c3aed">Relay Server</text>
+    <text x="515" y="84" textAnchor="middle" fontSize="10" fill="#555">rooms · WebSocket</text>
+
+    <rect x="230" y="180" width="150" height="60" rx="16" fill="url(#glass)" stroke="#7c3aed" strokeWidth="2"/>
+    <text x="305" y="206" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7c3aed">Guest IDE</text>
+    <text x="305" y="224" textAnchor="middle" fontSize="10" fill="#555">joins via room ID</text>
+
+    <rect x="590" y="180" width="150" height="60" rx="16" fill="url(#glass)" stroke="#a78bfa" strokeWidth="2" strokeDasharray="6 4"/>
+    <text x="665" y="206" textAnchor="middle" fontSize="13" fontWeight="700" fill="#a78bfa">Voice / Video</text>
+    <text x="665" y="224" textAnchor="middle" fontSize="10" fill="#555">planned · WebRTC P2P</text>
+
+    <line x1="170" y1="70" x2="226" y2="70" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#arrow)"/>
+    <line x1="380" y1="70" x2="436" y2="70" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#arrow)"/>
+    <line x1="515" y1="100" x2="380" y2="196" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#arrow)"/>
+    <line x1="560" y1="100" x2="650" y2="176" stroke="#a78bfa" strokeWidth="2" strokeDasharray="6 4" markerEnd="url(#arrow)"/>
+  </svg>
+</Frame>
+
+Every runtime message is a JSON envelope relayed by the server:
+
+```json
+{ "type": "message", "from": "3790E593", "data": "{ ...payload... }" }
+```
+
+## The layers, in order
+
+<Accordion>
+  <AccordionItem title="Session layer (extension/src/session.ts)">
+    Holds the active session — server-assigned room ID, role (`host` or
+    `guest`), and creation time. Pure state, no I/O.
+  </AccordionItem>
+  <AccordionItem title="Connection layer (extension/src/connection.ts)">
+    Creates rooms over HTTP, then owns one WebSocket per session with a 3s
+    auto-reconnect loop. Close code `1008` (bad room) is treated as fatal so a
+    typo'd ID never spins a reconnect storm.
+  </AccordionItem>
+  <AccordionItem title="Presence layer (extension/src/presence.ts)">
+    Broadcasts cursor/selection offsets every 150ms and renders each peer's
+    ranges as a colored decoration — the color is hashed from the peer's
+    client ID.
+  </AccordionItem>
+  <AccordionItem title="Sync layer (extension/src/sync.ts)">
+    A <Tooltip tip="Conflict-free Replicated Data Type — a structure that merges concurrent edits without coordination." headline="CRDT" cta="See text sync" href="/features/text-sync">CRDT</Tooltip>-backed
+    document mirror per file, using Yjs. Hosts broadcast initial state; every
+    local edit becomes a binary delta relayed to peers.
+  </AccordionItem>
+  <AccordionItem title="Relay (server/src/server.ts)">
+    Deliberately dumb: validates JSON, fans frames out to the other room
+    members, deletes empty rooms. No document storage ever touches disk.
+  </AccordionItem>
+</Accordion>
+
+:::note
+The server never persists content. If the last peer leaves, the room — and
+everything in it — is gone. That's a feature.
+:::
