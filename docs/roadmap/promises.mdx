@@ -40,11 +40,32 @@ real collaboration suite.
       text and presence regardless.
 </Steps>
 
-:::warning
-**Voice chat and live video are shipped.** Both ride the same WebRTC mesh and
-the existing relay — no media server, no new infrastructure. **Join approval
-and read-only guests remain design-stage promises.**
+:::tip
+**Every promise on this page is now shipped.** Voice, video, and access
+control all ride the existing relay — no media server, no new infrastructure.
+The original design promises held.
 :::
+
+## Access control, as built
+
+<Steps>
+  1. **Room tokens, not obscurity**
+
+      `POST /rooms` now mints a share token alongside the ID. Connecting with a
+      valid token grants instant entry; the first token-holder claims hostship.
+
+  2. **Nobody reads before approval**
+
+      Tokenless guests join as *pending*: the server relays nothing they say
+      and tells them nothing except "pending". The host gets a
+      `peer.request` card — approve or deny.
+
+  3. **Read-only is a server-side role**
+
+      The host can flip any member to read-only. The relay itself drops
+      `doc.*` frames from readonly members, so trust never depends on client
+      honesty. Hostship transfers automatically to an editor if the host drops.
+</Steps>
 
 ## Voice chat, as built
 
@@ -95,25 +116,28 @@ of breaking anything.
 ## Access control, in three rules
 
 <Accordion>
-  <AccordionItem title="1. Nobody reads before approval">
-    Guests connect but receive no `doc.state` and no presence until the host
-    approves — the gate sits in the client, before any content flows.
+  <AccordionItem title="1. Nobody reads before approval" defaultOpen>
+    Tokenless guests connect as *pending* — the server relays nothing they say
+    and tells them nothing until the host approves. The gate sits server-side,
+    before any content flows.
   </AccordionItem>
   <AccordionItem title="2. Read-only is a server-side role">
-    The relay drops `doc.update` frames from read-only members, so trust
-    doesn't depend on client honesty.
+    The relay itself drops `doc.*` frames from read-only members, so trust
+    doesn't depend on client honesty. Hostship transfers to an editor if the
+    host drops.
   </AccordionItem>
   <AccordionItem title="3. Room tokens, not obscurity">
-    v0.2 sessions mint a share token alongside the ID; joining without a valid
-    token requires host approval.
+    Sessions mint a share token alongside the ID: token holders skip the gate;
+    everyone else waits for the host's verdict.
   </AccordionItem>
 </Accordion>
 
 <Prompt
-  description="Track implementation progress with your agent."
+  description="Audit the access-control implementation with your agent."
   actions={["copy"]}
 >
-  Check the antigravity-live-share repo for a feature/voice-chat branch. If it
-  exists, summarize the WebRTC signaling messages implemented so far; if not,
-  say which roadmap item is currently in progress instead.
+  Read server/src/server.ts in the antigravity-live-share repo and verify:
+  pending members' messages are never relayed, doc.* frames from readonly
+  members are dropped, and session.control frames are honored only from the
+  current host. Report each check as pass or fail.
 </Prompt>
