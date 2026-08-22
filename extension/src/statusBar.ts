@@ -12,6 +12,7 @@ export class SessionStatusBar {
   private peers: PeerInfo[] = [];
   private voice = false;
   private video = false;
+  private pending = false;
 
   activate(sessionId: string, role: string): void {
     this.sessionId = sessionId;
@@ -57,6 +58,11 @@ export class SessionStatusBar {
     this.render();
   }
 
+  setPending(pending: boolean): void {
+    this.pending = pending;
+    this.render();
+  }
+
   deactivate(): void {
     this.item.hide();
     this.sessionId = "";
@@ -64,6 +70,7 @@ export class SessionStatusBar {
     this.peers = [];
     this.voice = false;
     this.video = false;
+    this.pending = false;
   }
 
   private render(): void {
@@ -74,9 +81,12 @@ export class SessionStatusBar {
       this.video ? " $(video)" : ""
     }`;
 
-    this.item.text = `$(broadcast) Live Share · $(person) ${label}${mediaLabel}`;
-    this.item.backgroundColor =
-      this.peers.length > 0
+    const pendingLabel = this.pending ? " $(clock) pending" : "";
+
+    this.item.text = `$(broadcast) Live Share · $(person) ${label}${mediaLabel}${pendingLabel}`;
+    this.item.backgroundColor = this.pending
+      ? new vscode.ThemeColor("statusBarItem.warningBackground")
+      : this.peers.length > 0
         ? new vscode.ThemeColor("statusBarItem.warningBackground")
         : undefined;
   }
