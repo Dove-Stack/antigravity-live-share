@@ -67,6 +67,10 @@ in a relay envelope; everything else is point-to-point semantics.
 | `doc.update` | both ways | Binary CRDT delta (base64) for one file |
 | `voice.offer` / `voice.answer` | peer → peer (via `to`) | WebRTC session descriptions for the voice mesh |
 | `voice.ice` | peer → peer (via `to`) | ICE candidate for the voice mesh |
+| `video.offer` / `video.answer` / `video.ice` | peer → peer (via `to`) | Signaling for the video mesh |
+| `session.control` | host → server | Approve / deny a pending guest, or set a member's role |
+| `session.approved` / `session.role` / `session.host` | server → client | Access verdicts and hostship changes |
+| `peer.request` | server → host | A tokenless guest is waiting for approval |
 
 :::warning
 Invalid JSON inbound earns an `error` frame and is dropped — the relay never
