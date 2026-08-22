@@ -25,6 +25,9 @@ let voice: VoiceManager | undefined;
 let video: VideoManager | undefined;
 let videoPanel: VideoPanel | undefined;
 let myClientId: string | undefined;
+let myAccess: "editor" | "readonly" = "editor";
+let amHost = false;
+let awaitingApproval = false;
 
 const panel = new SessionPanel({
   onCopy: () => {
@@ -99,53 +102,171 @@ function getServerUrl(): string {
     .get<string>("serverUrl", "http://localhost:3000");
 }
 
+function applyAccessFromEvent(event: ServerEvent): void {
+  const role =
+    typeof event.role === "string" && event.role === "readonly"
+      ? "readonly"
+      : "editor";
+
+  myAccess = role;
+  amHost = event.isHost === true;
+  awaitingApproval = false;
+  statusBar.setPending(false);
+  sync?.setCanSend(myAccess === "editor");
+}
+
+function beginCollaboration(): void {
+  if (!connection) {
+    return;
+  }
+
+  presence?.stop();
+
+  presence = new PresenceManager(() => connection);
+  presence.start();
+
+  sync?.stop();
+
+  const isHostRole = sessionManager.getSession()?.role === "host";
+
+  sync = new SyncManager(
+    () => connection,
+    isHostRole,
+    isHostRole || myAccess === "editor",
+  );
+  sync.start();
+
+  voice?.stop();
+
+  voice = new VoiceManager({
+    getClientId: () => myClientId,
+    getPeers: () => Array.from(peerNames.keys()),
+    send: (relayEvent) => connection?.send(relayEvent),
+    onVoiceStateChanged: (active, micEnabled) => {
+      statusBar.setVoice(active && micEnabled);
+    },
+  });
+
+  video?.stop();
+  videoPanel?.close();
+  videoPanel = undefined;
+
+  video = new VideoManager({
+    getClientId: () => myClientId,
+    getPeers: () => Array.from(peerNames.keys()),
+    send: (relayEvent) => connection?.send(relayEvent),
+    onFrame: (peerId, jpeg) => {
+      videoPanel?.ensurePeer(peerId);
+      videoPanel?.showFrame(peerId, jpeg);
+    },
+    onVideoStateChanged: (active) => {
+      statusBar.setVideo(active);
+    },
+  });
+
+  connection.send({
+    type: "presence.hello",
+    name: process.env.USERNAME || process.env.USER || "peer",
+  });
+}
+
 function handleServerEvent(event: ServerEvent): void {
   switch (event.type) {
-    case "connected":
+    case "connected": {
       myClientId =
         typeof event.clientId === "string" ? event.clientId : undefined;
 
-      presence = new PresenceManager(() => connection);
-      presence.start();
+      const status =
+        typeof event.status === "string" ? event.status : "approved";
 
-      sync = new SyncManager(
-        () => connection,
-        sessionManager.getSession()?.role === "host",
+      if (status === "pending") {
+        awaitingApproval = true;
+        statusBar.activate(
+          sessionManager.getSession()?.id ?? "",
+          sessionManager.getSession()?.role ?? "guest",
+        );
+        statusBar.setPending(true);
+        vscode.window.showInformationMessage(
+          "Live Share: waiting for the host to approve your join request.",
+        );
+        break;
+      }
+
+      applyAccessFromEvent(event);
+      beginCollaboration();
+
+      const session = sessionManager.getSession();
+
+      if (session?.role === "host") {
+        statusBar.activate(session.id, session.role);
+
+        vscode.window.showInformationMessage(
+          `Live Share Session Started. ID: ${session.id}`,
+        );
+      } else {
+        statusBar.activate(session?.id ?? "", "guest");
+
+        vscode.window.showInformationMessage(
+          `Joined Live Share session: ${session?.id ?? ""}`,
+        );
+      }
+
+      panel.show(currentState()!);
+      break;
+    }
+    case "peer.request": {
+      const clientId =
+        typeof event.clientId === "string" ? event.clientId : "";
+
+      if (!clientId) {
+        break;
+      }
+
+      vscode.window
+        .showInformationMessage(
+          `Live Share: guest ${clientId} wants to join this session.`,
+          "Approve",
+          "Deny",
+        )
+        .then((choice) => {
+          if (choice === "Approve") {
+            connection?.send({
+              type: "session.control",
+              action: "approve",
+              target: clientId,
+            });
+          } else if (choice === "Deny") {
+            connection?.send({
+              type: "session.control",
+              action: "deny",
+              target: clientId,
+            });
+          }
+        });
+      break;
+    }
+    case "session.approved":
+      applyAccessFromEvent(event);
+      beginCollaboration();
+
+      vscode.window.showInformationMessage(
+        "Live Share: join request approved — you are in.",
       );
-      sync.start();
+      break;
+    case "session.role": {
+      applyAccessFromEvent(event);
 
-      voice?.stop();
+      vscode.window.showInformationMessage(
+        `Live Share: you are now ${myAccess === "readonly" ? "read-only" : "an editor"}.`,
+      );
+      break;
+    }
+    case "session.host":
+      amHost = true;
 
-      voice = new VoiceManager({
-        getClientId: () => myClientId,
-        getPeers: () => Array.from(peerNames.keys()),
-        send: (relayEvent) => connection?.send(relayEvent),
-        onVoiceStateChanged: (active, micEnabled) => {
-          statusBar.setVoice(active && micEnabled);
-        },
-      });
-
-      video?.stop();
-      videoPanel?.close();
-      videoPanel = undefined;
-
-      video = new VideoManager({
-        getClientId: () => myClientId,
-        getPeers: () => Array.from(peerNames.keys()),
-        send: (relayEvent) => connection?.send(relayEvent),
-        onFrame: (peerId, jpeg) => {
-          videoPanel?.ensurePeer(peerId);
-          videoPanel?.showFrame(peerId, jpeg);
-        },
-        onVideoStateChanged: (active) => {
-          statusBar.setVideo(active);
-        },
-      });
-
-      connection?.send({
-        type: "presence.hello",
-        name: process.env.USERNAME || process.env.USER || "peer",
-      });
+      vscode.window.showInformationMessage(
+        "Live Share: you are now the session host.",
+      );
       break;
     case "message": {
       const from = typeof event.from === "string" ? event.from : "";
@@ -238,6 +359,9 @@ function handleConnectionClosed(code: number, reason: string): void {
   videoPanel?.close();
   videoPanel = undefined;
   myClientId = undefined;
+  myAccess = "editor";
+  amHost = false;
+  awaitingApproval = false;
   statusBar.deactivate();
   panel.dispose();
 
@@ -246,10 +370,11 @@ function handleConnectionClosed(code: number, reason: string): void {
   vscode.window.showWarningMessage(`Live Share session disconnected (${detail}).`);
 }
 
-async function openConnection(sessionId: string): Promise<void> {
+async function openConnection(sessionId: string, token?: string): Promise<void> {
   const options: ConnectionOptions = {
     serverUrl: getServerUrl(),
     sessionId,
+    token,
     onEvent: handleServerEvent,
     onClosed: handleConnectionClosed,
   };
@@ -273,6 +398,9 @@ function teardown(): void {
   videoPanel?.close();
   videoPanel = undefined;
   myClientId = undefined;
+  myAccess = "editor";
+  amHost = false;
+  awaitingApproval = false;
   statusBar.deactivate();
   panel.dispose();
   peerNames.clear();
@@ -292,10 +420,10 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      let roomId: string;
+      let room: { id: string; token: string };
 
       try {
-        roomId = await createRoom(getServerUrl());
+        room = await createRoom(getServerUrl());
       } catch (error) {
         vscode.window.showErrorMessage(
           `Live Share: could not create a session on the server. ${
@@ -305,17 +433,10 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const session = sessionManager.startSession(roomId);
+      const session = sessionManager.startSession(room.id, room.token);
 
       try {
-        await openConnection(session.id);
-
-        statusBar.activate(session.id, session.role);
-        panel.show(currentState()!);
-
-        vscode.window.showInformationMessage(
-          `Live Share Session Started. ID: ${session.id} Role: ${session.role}`,
-        );
+        await openConnection(session.id, session.token);
       } catch (error) {
         teardown();
 
@@ -399,17 +520,21 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const session = sessionManager.joinSession(sessionId);
+      const tokenInput = await vscode.window.showInputBox({
+        title: "Access Token (optional)",
+        prompt:
+          "Paste the host's share token for instant entry — leave empty to request the host's approval.",
+        placeHolder: "Example: 9F3C1E8A2B47D605",
+        ignoreFocusOut: true,
+      });
+
+      const session = sessionManager.joinSession(
+        sessionId,
+        tokenInput?.trim() || undefined,
+      );
 
       try {
-        await openConnection(session.id);
-
-        statusBar.activate(session.id, session.role);
-        panel.show(currentState()!);
-
-        vscode.window.showInformationMessage(
-          `Joined Live Share session: ${session.id}`,
-        );
+        await openConnection(session.id, session.token);
       } catch (error) {
         teardown();
 
