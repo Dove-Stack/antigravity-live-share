@@ -8,6 +8,7 @@ export interface ServerEvent {
 export interface ConnectionOptions {
   serverUrl: string;
   sessionId: string;
+  token?: string;
   onEvent: (event: ServerEvent) => void;
   onClosed: (code: number, reason: string) => void;
 }
@@ -15,7 +16,9 @@ export interface ConnectionOptions {
 const RECONNECT_DELAY_MS = 3000;
 const FATAL_CLOSE_CODES = new Set([1000, 1008]);
 
-export async function createRoom(serverUrl: string): Promise<string> {
+export async function createRoom(
+  serverUrl: string,
+): Promise<{ id: string; token: string }> {
   const base = serverUrl.replace(/\/+$/, "");
 
   const response = await fetch(`${base}/rooms`, { method: "POST" });
@@ -24,13 +27,13 @@ export async function createRoom(serverUrl: string): Promise<string> {
     throw new Error(`Server responded with ${response.status}`);
   }
 
-  const body = (await response.json()) as { id?: string };
+  const body = (await response.json()) as { id?: string; token?: string };
 
-  if (!body.id) {
-    throw new Error("Server response did not include a room ID.");
+  if (!body.id || !body.token) {
+    throw new Error("Server response did not include a room ID and token.");
   }
 
-  return body.id;
+  return { id: body.id, token: body.token };
 }
 
 export class LiveShareConnection {
@@ -58,11 +61,13 @@ export class LiveShareConnection {
   }
 
   private connect(): Promise<void> {
-    const { serverUrl, sessionId, onEvent, onClosed } = this.options;
+    const { serverUrl, sessionId, token, onEvent, onClosed } = this.options;
 
     return new Promise((resolve, reject) => {
       const base = serverUrl.replace(/\/+$/, "");
-      const wsUrl = `${base.replace(/^http/, "ws")}/?room=${encodeURIComponent(sessionId)}`;
+      const wsUrl =
+        `${base.replace(/^http/, "ws")}/?room=${encodeURIComponent(sessionId)}` +
+        (token ? `&token=${encodeURIComponent(token)}` : "");
       const socket = new WebSocket(wsUrl);
       let settled = false;
 
