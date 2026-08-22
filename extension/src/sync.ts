@@ -35,7 +35,12 @@ export class SyncManager {
   constructor(
     private readonly getConnection: () => LiveShareConnection | undefined,
     private readonly isHost: boolean,
+    private canSend: boolean = true,
   ) {}
+
+  setCanSend(enabled: boolean): void {
+    this.canSend = enabled;
+  }
 
   start(): void {
     this.disposables.push(
@@ -134,7 +139,7 @@ export class SyncManager {
   }
 
   private onLocalChange(document: vscode.TextDocument): void {
-    if (this.applyingRemote) {
+    if (this.applyingRemote || !this.canSend) {
       return;
     }
 
