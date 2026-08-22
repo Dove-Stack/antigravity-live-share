@@ -4,22 +4,24 @@ export interface LiveShareSession {
   id: string;
   createdAt: number;
   role: SessionRole;
+  token?: string;
 }
 
 export class SessionManager {
   private session: LiveShareSession | undefined;
 
-  startSession(id: string): LiveShareSession {
+  startSession(id: string, token: string): LiveShareSession {
     this.session = {
       id,
       createdAt: Date.now(),
       role: "host",
+      token,
     };
 
     return this.session;
   }
 
-  joinSession(id: string): LiveShareSession {
+  joinSession(id: string, token?: string): LiveShareSession {
     const normalized = id.trim().toUpperCase();
 
     if (!normalized) {
@@ -30,6 +32,7 @@ export class SessionManager {
       id: normalized,
       createdAt: Date.now(),
       role: "guest",
+      token,
     };
 
     return this.session;
