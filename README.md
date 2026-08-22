@@ -4,7 +4,7 @@ Real-time collaborative development for the [Antigravity IDE](https://antigravit
 
 > **Status:** active development · `v0.1.0` · MIT licensed
 >
-> 🟣 Sessions &nbsp;·&nbsp; 🟣 Presence &nbsp;·&nbsp; 🟣 Glass UI &nbsp;·&nbsp; 🟣 Text Sync (beta) &nbsp;·&nbsp; 🟣 Voice Chat &nbsp;·&nbsp; 🟣 Live Video &nbsp;·&nbsp; ⚪ Join Approval *(next)*
+> 🟣 Sessions &nbsp;·&nbsp; 🟣 Presence &nbsp;·&nbsp; 🟣 Glass UI &nbsp;·&nbsp; 🟣 Text Sync (beta) &nbsp;·&nbsp; 🟣 Voice Chat &nbsp;·&nbsp; 🟣 Live Video &nbsp;·&nbsp; 🟣 Join Approval — **every roadmap promise shipped**
 
 ## 📖 Documentation
 
@@ -51,6 +51,7 @@ Highlights: [Quickstart](docs/getting-started/quickstart.mdx) · [Architecture](
 | **Text sync** | One Yjs doc per file; binary deltas over state vectors — concurrent edits merge cleanly |
 | **Voice chat** | Full WebRTC mesh, opus over data channels, ffmpeg capture / ffplay playback (capability-detected) |
 | **Live video** | Webcam MJPEG frames over the same mesh, rendered in a glass webview panel |
+| **Join approval** | Room tokens for instant entry, host-approved guests, server-enforced read-only roles |
 | **Glass UI** | Status bar entry point + glassmorphism panel: role badge, copy ID, live peer list |
 | **Docs site** | Purple + light-grey Blume site with search, EN/ES i18n, versioning-ready, interactive islands |
 
@@ -104,6 +105,7 @@ as `{ "type": "message", "from": "<clientId>", "data": "<json>" }`.
 | `doc.state` / `doc.update` | Yjs snapshots and binary deltas (base64) |
 | `voice.offer` / `voice.answer` / `voice.ice` | WebRTC audio mesh signaling |
 | `video.offer` / `video.answer` / `video.ice` | WebRTC video mesh signaling |
+| `session.control` / `session.approved` / `session.role` | Host-side access control |
 
 See the full [protocol reference](docs/reference/protocol.mdx).
 
@@ -126,8 +128,10 @@ git log --oneline   # the history reads like a changelog — because it is one
 ```text
 ✅ client–server connection   ✅ presence            ✅ glass UI panel
 ✅ text sync (CRDT)           ✅ voice chat          ✅ live video
-✅ docs site                  ▶️ join approval       ⬜ read-only guests
+✅ docs site                  ✅ join approval       ✅ read-only guests
 ```
+
+All roadmap promises shipped. Next chapter: hardening — tests, CI, packaging, deployment.
 
 ## License
 
