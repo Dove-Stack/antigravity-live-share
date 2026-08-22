@@ -15,7 +15,7 @@ const FEATURES: Feature[] = [
   { name: "CRDT text sync (Yjs)", status: "shipped", note: "Concurrent-edit safe merging" },
   { name: "Voice chat", status: "shipped", note: "WebRTC data-channel audio, opus, ffmpeg capture" },
   { name: "Live video", status: "shipped", note: "MJPEG frames over the same mesh, glass webview" },
-  { name: "Join approval & read-only guests", status: "planned", note: "Host-side access control" },
+  { name: "Join approval & read-only guests", status: "shipped", note: "Room tokens, host gate, server-enforced roles" },
 ];
 
 const FILTERS: Array<{ key: string; label: string }> = [
